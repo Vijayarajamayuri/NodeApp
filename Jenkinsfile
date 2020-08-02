@@ -1,7 +1,7 @@
 pipeline
 {
     agent any
-    {
+    
         stages{
             stage('pre cleanup'){
                 script{
@@ -44,4 +44,4 @@ pipeline
         }
     }  
 
-    }
+    
