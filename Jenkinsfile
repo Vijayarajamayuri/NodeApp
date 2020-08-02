@@ -1,33 +1,47 @@
-node {
-    def app
-
-    stage('Clone repository') {
-        /* Cloning the Repository to our Workspace */
-
-        checkout scm
-    }
-
-    stage('Build image') {
-        /* This builds the actual image */
-
-        app = docker.build("anandr72/nodeapp")
-    }
-
-    stage('Test image') {
-        
-        app.inside {
-            echo "Tests passed"
+pipeline
+{
+    agent any
+    {
+        stages{
+            stage('pre cleanup'){
+                script{
+                     sh label: '', script: 'docker system prune -f > /dev/null 2>&1'
+                      cleanWs()
+                }
+            
+                            }
+            stage('Checkout from SCM'){
+            
+                 script{
+                      git([url: 'https://github.com/Vijayarajamayuri/NodeApp', branch: 'master', credentialsId: 'Gthubid'])
+                              }  
+                                       }
+            stage('Install NPM'){
+                        script{
+                             sh label: '', script: 'npm install'
+                              }  
+                                }
+            stage('Build Docker'){
+                 script{
+                 sh label: '', script: 'docker build -t demoecr .'
+                       }  
+                                   }
+            stage('Push docker image to ECR'){
+                            script{
+                  docker.withRegistry('https://662069790082.dkr.ecr.us-east-1.amazonaws.com/demoecr', 'ecr:us-east-1:AWSCredentials') {
+                        docker.image('demoecr').push('latest')
+                              }
+                                   }  
+                                     }
+            stage('Post cleanup'){
+                     script{
+                         sh label: '', script: 'docker system prune -f > /dev/null 2>&1'  
+                          cleanWs
+                            }
+                                }  
+                
+            }
         }
-    }
+    }  
 
-    stage('Push image') {
-        /* 
-			You would need to first register with DockerHub before you can push images to your account
-		*/
-        docker.withRegistry('https://registry.hub.docker.com', 'docker-hub') {
-            app.push("${env.BUILD_NUMBER}")
-            app.push("latest")
-            } 
-                echo "Trying to Push Docker Build to DockerHub"
     }
-}
